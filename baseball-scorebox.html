@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MLB Scorebox</title>
+    <style>
+        body {
+            font-family: 'Courier New', monospace;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+            font-size: 12px;
+            line-height: 1.2;
+        }
+        
+        .header {
+            text-align: center;
+            border-bottom: 3px solid #000;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .newspaper-title {
+            font-size: 24px;
+            font-weight: bold;
+            margin: 0;
+        }
+        
+        .date-info {
+            font-size: 14px;
+            margin: 5px 0;
+        }
+        
+        .main-headline {
+            font-size: 18px;
+            font-weight: bold;
+            text-align: center;
+            margin: 20px 0;
+            text-transform: uppercase;
+        }
+        
+        .scorebox-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .league-section {
+            border: 2px solid #000;
+            padding: 15px;
+            background-color: white;
+        }
+        
+        .league-header {
+            font-size: 16px;
+            font-weight: bold;
+            text-align: center;
+            border-bottom: 1px solid #000;
+            padding-bottom: 5px;
+            margin-bottom: 15px;
+            text-transform: uppercase;
+        }
+        
+        .division {
+            margin-bottom: 20px;
+        }
+        
+        .division-header {
+            font-weight: bold;
+            font-size: 14px;
+            border-bottom: 1px solid #666;
+            padding-bottom: 3px;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+        }
+        
+        .games-list {
+            margin-bottom: 15px;
+        }
+        
+        .game {
+            display: flex;
+            justify-content: space-between;
+            padding: 3px 0;
+            border-bottom: 1px dotted #ccc;
+        }
+        
+        .game:last-child {
+            border-bottom: none;
+        }
+        
+        .teams {
+            flex: 1;
+        }
+        
+        .score {
+            font-weight: bold;
+            min-width: 40px;
+            text-align: right;
+        }
+        
+        .team-line {
+            display: flex;
+            justify-content: space-between;
+            margin: 2px 0;
+        }
+        
+        .winner {
+            font-weight: bold;
+        }
+        
+        .game-info {
+            font-size: 10px;
+            color: #666;
+            font-style: italic;
+        }
+        
+        .standings-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 10px;
+            margin-top: 15px;
+        }
+        
+        .standings-table th,
+        .standings-table td {
+            border: 1px solid #000;
+            padding: 3px 5px;
+            text-align: center;
+        }
+        
+        .standings-table th {
+            background-color: #f0f0f0;
+            font-weight: bold;
+        }
+        
+        .team-name {
+            text-align: left !important;
+            font-weight: bold;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 20px;
+            font-style: italic;
+        }
+        
+        .error {
+            color: red;
+            text-align: center;
+            padding: 20px;
+        }
+        
+        .update-info {
+            text-align: center;
+            font-size: 10px;
+            color: #666;
+            margin-top: 20px;
+            font-style: italic;
+        }
+
+        @media (max-width: 768px) {
+            .scorebox-container {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+            
+            body {
+                padding: 10px;
+                font-size: 11px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1 class="newspaper-title">BASEBALL GAZETTE</h1>
+        <div class="date-info" id="current-date"></div>
+    </div>
+    
+    <div class="main-headline">Major League Baseball Scores</div>
+    
+    <div id="loading" class="loading">Loading today's games...</div>
+    <div id="error" class="error" style="display: none;"></div>
+    
+    <div id="scorebox" class="scorebox-container" style="display: none;">
+        <div class="league-section">
+            <div class="league-header">American League</div>
+            <div id="al-games"></div>
+        </div>
+        
+        <div class="league-section">
+            <div class="league-header">National League</div>
+            <div id="nl-games"></div>
+        </div>
+    </div>
+    
+    <div class="update-info">
+        <div>Last updated: <span id="last-update"></span></div>
+        <div>Scores update automatically every hour</div>
+    </div>
+
+    <script>
+        // Team configurations
+        const MLB_TEAMS = {
+            // American League
+            'Boston Red Sox': { league: 'AL', division: 'East', abbrev: 'BOS' },
+            'New York Yankees': { league: 'AL', division: 'East', abbrev: 'NYY' },
+            'Tampa Bay Rays': { league: 'AL', division: 'East', abbrev: 'TB' },
+            'Toronto Blue Jays': { league: 'AL', division: 'East', abbrev: 'TOR' },
+            'Baltimore Orioles': { league: 'AL', division: 'East', abbrev: 'BAL' },
+            
+            'Chicago White Sox': { league: 'AL', division: 'Central', abbrev: 'CWS' },
+            'Cleveland Guardians': { league: 'AL', division: 'Central', abbrev: 'CLE' },
+            'Detroit Tigers': { league: 'AL', division: 'Central', abbrev: 'DET' },
+            'Kansas City Royals': { league: 'AL', division: 'Central', abbrev: 'KC' },
+            'Minnesota Twins': { league: 'AL', division: 'Central', abbrev: 'MIN' },
+            
+            'Houston Astros': { league: 'AL', division: 'West', abbrev: 'HOU' },
+            'Los Angeles Angels': { league: 'AL', division: 'West', abbrev: 'LAA' },
+            'Oakland Athletics': { league: 'AL', division: 'West', abbrev: 'OAK' },
+            'Seattle Mariners': { league: 'AL', division: 'West', abbrev: 'SEA' },
+            'Texas Rangers': { league: 'AL', division: 'West', abbrev: 'TEX' },
+            
+            // National League
+            'Atlanta Braves': { league: 'NL', division: 'East', abbrev: 'ATL' },
+            'Miami Marlins': { league: 'NL', division: 'East', abbrev: 'MIA' },
+            'New York Mets': { league: 'NL', division: 'East', abbrev: 'NYM' },
+            'Philadelphia Phillies': { league: 'NL', division: 'East', abbrev: 'PHI' },
+            'Washington Nationals': { league: 'NL', division: 'East', abbrev: 'WSH' },
+            
+            'Chicago Cubs': { league: 'NL', division: 'Central', abbrev: 'CHC' },
+            'Cincinnati Reds': { league: 'NL', division: 'Central', abbrev: 'CIN' },
+            'Milwaukee Brewers': { league: 'NL', division: 'Central', abbrev: 'MIL' },
+            'Pittsburgh Pirates': { league: 'NL', division: 'Central', abbrev: 'PIT' },
+            'St. Louis Cardinals': { league: 'NL', division: 'Central', abbrev: 'STL' },
+            
+            'Arizona Diamondbacks': { league: 'NL', division: 'West', abbrev: 'ARI' },
+            'Colorado Rockies': { league: 'NL', division: 'West', abbrev: 'COL' },
+            'Los Angeles Dodgers': { league: 'NL', division: 'West', abbrev: 'LAD' },
+            'San Diego Padres': { league: 'NL', division: 'West', abbrev: 'SD' },
+            'San Francisco Giants': { league: 'NL', division: 'West', abbrev: 'SF' }
+        };
+
+        // Set current date
+        document.getElementById('current-date').textContent = new Date().toLocaleDateString('en-US', {
+            weekday: 'long',
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+        });
+
+        // Function to fetch MLB scores
+        async function fetchMLBScores() {
+            try {
+                // This is a demo with sample data - in production, you'd fetch from ESPN API
+                const sampleGames = [
+                    {
+                        homeTeam: 'New York Yankees',
+                        awayTeam: 'Boston Red Sox',
+                        homeScore: 7,
+                        awayScore: 4,
+                        status: 'Final',
+                        inning: '9th'
+                    },
+                    {
+                        homeTeam: 'Los Angeles Dodgers',
+                        awayTeam: 'San Francisco Giants',
+                        homeScore: 3,
+                        awayScore: 8,
+                        status: 'Final',
+                        inning: '9th'
+                    },
+                    {
+                        homeTeam: 'Houston Astros',
+                        awayTeam: 'Texas Rangers',
+                        homeScore: 5,
+                        awayScore: 2,
+                        status: 'Final',
+                        inning: '9th'
+                    },
+                    {
+                        homeTeam: 'Chicago Cubs',
+                        awayTeam: 'St. Louis Cardinals',
+                        homeScore: 6,
+                        awayScore: 6,
+                        status: 'Live',
+                        inning: '7th'
+                    },
+                    {
+                        homeTeam: 'Atlanta Braves',
+                        awayTeam: 'Philadelphia Phillies',
+                        homeScore: 2,
+                        awayScore: 9,
+                        status: 'Final',
+                        inning: '9th'
+                    }
+                ];
+
+                displayGames(sampleGames);
+                
+            } catch (error) {
+                document.getElementById('error').textContent = 'Error loading scores: ' + error.message;
+                document.getElementById('error').style.display = 'block';
+            }
+        }
+
+        function displayGames(games) {
+            const alGames = document.getElementById('al-games');
+            const nlGames = document.getElementById('nl-games');
+            
+            // Clear existing content
+            alGames.innerHTML = '';
+            nlGames.innerHTML = '';
+            
+            // Group games by league and division
+            const gamesByLeague = {
+                'AL': { 'East': [], 'Central': [], 'West': [] },
+                'NL': { 'East': [], 'Central': [], 'West': [] }
+            };
+            
+            games.forEach(game => {
+                const homeTeamInfo = MLB_TEAMS[game.homeTeam];
+                const awayTeamInfo = MLB_TEAMS[game.awayTeam];
+                
+                if (homeTeamInfo && awayTeamInfo) {
+                    const league = homeTeamInfo.league;
+                    const division = homeTeamInfo.division;
+                    gamesByLeague[league][division].push(game);
+                }
+            });
+            
+            // Display AL games
+            displayLeagueGames('AL', gamesByLeague['AL'], alGames);
+            
+            // Display NL games
+            displayLeagueGames('NL', gamesByLeague['NL'], nlGames);
+            
+            // Hide loading, show scorebox
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('scorebox').style.display = 'grid';
+            
+            // Update last update time
+            document.getElementById('last-update').textContent = new Date().toLocaleTimeString();
+        }
+        
+        function displayLeagueGames(league, divisions, container) {
+            ['East', 'Central', 'West'].forEach(division => {
+                if (divisions[division].length > 0) {
+                    const divisionDiv = document.createElement('div');
+                    divisionDiv.className = 'division';
+                    
+                    const divisionHeader = document.createElement('div');
+                    divisionHeader.className = 'division-header';
+                    divisionHeader.textContent = `${league} ${division}`;
+                    divisionDiv.appendChild(divisionHeader);
+                    
+                    const gamesList = document.createElement('div');
+                    gamesList.className = 'games-list';
+                    
+                    divisions[division].forEach(game => {
+                        const gameDiv = createGameElement(game);
+                        gamesList.appendChild(gameDiv);
+                    });
+                    
+                    divisionDiv.appendChild(gamesList);
+                    container.appendChild(divisionDiv);
+                }
+            });
+        }
+        
+        function createGameElement(game) {
+            const gameDiv = document.createElement('div');
+            gameDiv.className = 'game';
+            
+            const awayWon = game.awayScore > game.homeScore && game.status === 'Final';
+            const homeWon = game.homeScore > game.awayScore && game.status === 'Final';
+            
+            gameDiv.innerHTML = `
+                <div class="teams">
+                    <div class="team-line">
+                        <span class="${awayWon ? 'winner' : ''}">${game.awayTeam}</span>
+                        <span class="score ${awayWon ? 'winner' : ''}">${game.awayScore}</span>
+                    </div>
+                    <div class="team-line">
+                        <span class="${homeWon ? 'winner' : ''}">${game.homeTeam}</span>
+                        <span class="score ${homeWon ? 'winner' : ''}">${game.homeScore}</span>
+                    </div>
+                    <div class="game-info">${game.status} ${game.inning !== '9th' ? game.inning : ''}</div>
+                </div>
+            `;
+            
+            return gameDiv;
+        }
+
+        // Load scores when page loads
+        fetchMLBScores();
+        
+        // Auto-refresh every 5 minutes
+        setInterval(fetchMLBScores, 300000);
+    </script>
+</body>
+</html>
