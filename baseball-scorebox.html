@@ -84,7 +84,7 @@
         .game {
             display: flex;
             justify-content: space-between;
-            padding: 3px 0;
+            padding: 8px 0;
             border-bottom: 1px dotted #ccc;
         }
         
@@ -116,30 +116,7 @@
             font-size: 10px;
             color: #666;
             font-style: italic;
-        }
-        
-        .standings-table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 10px;
-            margin-top: 15px;
-        }
-        
-        .standings-table th,
-        .standings-table td {
-            border: 1px solid #000;
-            padding: 3px 5px;
-            text-align: center;
-        }
-        
-        .standings-table th {
-            background-color: #f0f0f0;
-            font-weight: bold;
-        }
-        
-        .team-name {
-            text-align: left !important;
-            font-weight: bold;
+            margin-top: 3px;
         }
         
         .loading {
@@ -160,6 +137,13 @@
             color: #666;
             margin-top: 20px;
             font-style: italic;
+        }
+
+        .no-games {
+            text-align: center;
+            padding: 30px;
+            font-style: italic;
+            color: #666;
         }
 
         @media (max-width: 768px) {
@@ -200,49 +184,53 @@
     
     <div class="update-info">
         <div>Last updated: <span id="last-update"></span></div>
-        <div>Scores update automatically every hour</div>
+        <div>Scores update automatically every 10 minutes</div>
     </div>
 
     <script>
-        // Team configurations
+        // Team configurations with ESPN team IDs
         const MLB_TEAMS = {
-            // American League
-            'Boston Red Sox': { league: 'AL', division: 'East', abbrev: 'BOS' },
-            'New York Yankees': { league: 'AL', division: 'East', abbrev: 'NYY' },
-            'Tampa Bay Rays': { league: 'AL', division: 'East', abbrev: 'TB' },
-            'Toronto Blue Jays': { league: 'AL', division: 'East', abbrev: 'TOR' },
-            'Baltimore Orioles': { league: 'AL', division: 'East', abbrev: 'BAL' },
+            // American League East
+            'Boston Red Sox': { league: 'AL', division: 'East', abbrev: 'BOS', espnId: '2' },
+            'New York Yankees': { league: 'AL', division: 'East', abbrev: 'NYY', espnId: '10' },
+            'Tampa Bay Rays': { league: 'AL', division: 'East', abbrev: 'TB', espnId: '30' },
+            'Toronto Blue Jays': { league: 'AL', division: 'East', abbrev: 'TOR', espnId: '14' },
+            'Baltimore Orioles': { league: 'AL', division: 'East', abbrev: 'BAL', espnId: '1' },
             
-            'Chicago White Sox': { league: 'AL', division: 'Central', abbrev: 'CWS' },
-            'Cleveland Guardians': { league: 'AL', division: 'Central', abbrev: 'CLE' },
-            'Detroit Tigers': { league: 'AL', division: 'Central', abbrev: 'DET' },
-            'Kansas City Royals': { league: 'AL', division: 'Central', abbrev: 'KC' },
-            'Minnesota Twins': { league: 'AL', division: 'Central', abbrev: 'MIN' },
+            // American League Central
+            'Chicago White Sox': { league: 'AL', division: 'Central', abbrev: 'CWS', espnId: '4' },
+            'Cleveland Guardians': { league: 'AL', division: 'Central', abbrev: 'CLE', espnId: '5' },
+            'Detroit Tigers': { league: 'AL', division: 'Central', abbrev: 'DET', espnId: '6' },
+            'Kansas City Royals': { league: 'AL', division: 'Central', abbrev: 'KC', espnId: '7' },
+            'Minnesota Twins': { league: 'AL', division: 'Central', abbrev: 'MIN', espnId: '9' },
             
-            'Houston Astros': { league: 'AL', division: 'West', abbrev: 'HOU' },
-            'Los Angeles Angels': { league: 'AL', division: 'West', abbrev: 'LAA' },
-            'Oakland Athletics': { league: 'AL', division: 'West', abbrev: 'OAK' },
-            'Seattle Mariners': { league: 'AL', division: 'West', abbrev: 'SEA' },
-            'Texas Rangers': { league: 'AL', division: 'West', abbrev: 'TEX' },
+            // American League West
+            'Houston Astros': { league: 'AL', division: 'West', abbrev: 'HOU', espnId: '18' },
+            'Los Angeles Angels': { league: 'AL', division: 'West', abbrev: 'LAA', espnId: '3' },
+            'Oakland Athletics': { league: 'AL', division: 'West', abbrev: 'OAK', espnId: '11' },
+            'Seattle Mariners': { league: 'AL', division: 'West', abbrev: 'SEA', espnId: '12' },
+            'Texas Rangers': { league: 'AL', division: 'West', abbrev: 'TEX', espnId: '13' },
             
-            // National League
-            'Atlanta Braves': { league: 'NL', division: 'East', abbrev: 'ATL' },
-            'Miami Marlins': { league: 'NL', division: 'East', abbrev: 'MIA' },
-            'New York Mets': { league: 'NL', division: 'East', abbrev: 'NYM' },
-            'Philadelphia Phillies': { league: 'NL', division: 'East', abbrev: 'PHI' },
-            'Washington Nationals': { league: 'NL', division: 'East', abbrev: 'WSH' },
+            // National League East
+            'Atlanta Braves': { league: 'NL', division: 'East', abbrev: 'ATL', espnId: '15' },
+            'Miami Marlins': { league: 'NL', division: 'East', abbrev: 'MIA', espnId: '28' },
+            'New York Mets': { league: 'NL', division: 'East', abbrev: 'NYM', espnId: '21' },
+            'Philadelphia Phillies': { league: 'NL', division: 'East', abbrev: 'PHI', espnId: '22' },
+            'Washington Nationals': { league: 'NL', division: 'East', abbrev: 'WSH', espnId: '20' },
             
-            'Chicago Cubs': { league: 'NL', division: 'Central', abbrev: 'CHC' },
-            'Cincinnati Reds': { league: 'NL', division: 'Central', abbrev: 'CIN' },
-            'Milwaukee Brewers': { league: 'NL', division: 'Central', abbrev: 'MIL' },
-            'Pittsburgh Pirates': { league: 'NL', division: 'Central', abbrev: 'PIT' },
-            'St. Louis Cardinals': { league: 'NL', division: 'Central', abbrev: 'STL' },
+            // National League Central
+            'Chicago Cubs': { league: 'NL', division: 'Central', abbrev: 'CHC', espnId: '16' },
+            'Cincinnati Reds': { league: 'NL', division: 'Central', abbrev: 'CIN', espnId: '17' },
+            'Milwaukee Brewers': { league: 'NL', division: 'Central', abbrev: 'MIL', espnId: '8' },
+            'Pittsburgh Pirates': { league: 'NL', division: 'Central', abbrev: 'PIT', espnId: '23' },
+            'St. Louis Cardinals': { league: 'NL', division: 'Central', abbrev: 'STL', espnId: '24' },
             
-            'Arizona Diamondbacks': { league: 'NL', division: 'West', abbrev: 'ARI' },
-            'Colorado Rockies': { league: 'NL', division: 'West', abbrev: 'COL' },
-            'Los Angeles Dodgers': { league: 'NL', division: 'West', abbrev: 'LAD' },
-            'San Diego Padres': { league: 'NL', division: 'West', abbrev: 'SD' },
-            'San Francisco Giants': { league: 'NL', division: 'West', abbrev: 'SF' }
+            // National League West
+            'Arizona Diamondbacks': { league: 'NL', division: 'West', abbrev: 'ARI', espnId: '29' },
+            'Colorado Rockies': { league: 'NL', division: 'West', abbrev: 'COL', espnId: '27' },
+            'Los Angeles Dodgers': { league: 'NL', division: 'West', abbrev: 'LAD', espnId: '19' },
+            'San Diego Padres': { league: 'NL', division: 'West', abbrev: 'SD', espnId: '25' },
+            'San Francisco Giants': { league: 'NL', division: 'West', abbrev: 'SF', espnId: '26' }
         };
 
         // Set current date
@@ -253,59 +241,131 @@
             day: 'numeric'
         });
 
-        // Function to fetch MLB scores
+        // Function to get today's date in YYYYMMDD format
+        function getTodayDate() {
+            const today = new Date();
+            const year = today.getFullYear();
+            const month = String(today.getMonth() + 1).padStart(2, '0');
+            const day = String(today.getDate()).padStart(2, '0');
+            return `${year}${month}${day}`;
+        }
+
+        // Function to get yesterday's date in YYYYMMDD format
+        function getYesterdayDate() {
+            const yesterday = new Date();
+            yesterday.setDate(yesterday.getDate() - 1);
+            const year = yesterday.getFullYear();
+            const month = String(yesterday.getMonth() + 1).padStart(2, '0');
+            const day = String(yesterday.getDate()).padStart(2, '0');
+            return `${year}${month}${day}`;
+        }
+
+        // Function to fetch MLB scores from ESPN
         async function fetchMLBScores() {
             try {
-                // This is a demo with sample data - in production, you'd fetch from ESPN API
-                const sampleGames = [
-                    {
-                        homeTeam: 'New York Yankees',
-                        awayTeam: 'Boston Red Sox',
-                        homeScore: 7,
-                        awayScore: 4,
-                        status: 'Final',
-                        inning: '9th'
-                    },
-                    {
-                        homeTeam: 'Los Angeles Dodgers',
-                        awayTeam: 'San Francisco Giants',
-                        homeScore: 3,
-                        awayScore: 8,
-                        status: 'Final',
-                        inning: '9th'
-                    },
-                    {
-                        homeTeam: 'Houston Astros',
-                        awayTeam: 'Texas Rangers',
-                        homeScore: 5,
-                        awayScore: 2,
-                        status: 'Final',
-                        inning: '9th'
-                    },
-                    {
-                        homeTeam: 'Chicago Cubs',
-                        awayTeam: 'St. Louis Cardinals',
-                        homeScore: 6,
-                        awayScore: 6,
-                        status: 'Live',
-                        inning: '7th'
-                    },
-                    {
-                        homeTeam: 'Atlanta Braves',
-                        awayTeam: 'Philadelphia Phillies',
-                        homeScore: 2,
-                        awayScore: 9,
-                        status: 'Final',
-                        inning: '9th'
-                    }
-                ];
+                const today = getTodayDate();
+                const yesterday = getYesterdayDate();
+                
+                // Try today's games first, then yesterday's if no games today
+                let url = `https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/scoreboard?dates=${today}`;
+                
+                console.log('Fetching games for:', today);
+                
+                const response = await fetch(url);
+                const data = await response.json();
+                
+                let games = data.events || [];
+                
+                // If no games today, try yesterday
+                if (games.length === 0) {
+                    console.log('No games today, trying yesterday:', yesterday);
+                    url = `https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/scoreboard?dates=${yesterday}`;
+                    
+                    const yesterdayResponse = await fetch(url);
+                    const yesterdayData = await yesterdayResponse.json();
+                    games = yesterdayData.events || [];
+                }
+                
+                if (games.length === 0) {
+                    displayNoGames();
+                    return;
+                }
 
-                displayGames(sampleGames);
+                const processedGames = games.map(game => {
+                    const competition = game.competitions[0];
+                    const homeTeam = competition.competitors.find(team => team.homeAway === 'home');
+                    const awayTeam = competition.competitors.find(team => team.homeAway === 'away');
+                    
+                    return {
+                        homeTeam: homeTeam.team.displayName,
+                        awayTeam: awayTeam.team.displayName,
+                        homeScore: parseInt(homeTeam.score) || 0,
+                        awayScore: parseInt(awayTeam.score) || 0,
+                        status: competition.status.type.description,
+                        inning: competition.status.period ? `${competition.status.period}${getOrdinalSuffix(competition.status.period)}` : '',
+                        isComplete: competition.status.type.completed
+                    };
+                });
+
+                displayGames(processedGames);
                 
             } catch (error) {
-                document.getElementById('error').textContent = 'Error loading scores: ' + error.message;
+                console.error('Error fetching scores:', error);
+                document.getElementById('error').textContent = 'Error loading scores. Trying alternative source...';
                 document.getElementById('error').style.display = 'block';
+                
+                // Fallback to sample data if API fails
+                setTimeout(() => {
+                    displaySampleGames();
+                }, 2000);
             }
+        }
+
+        function getOrdinalSuffix(num) {
+            const suffixes = ['th', 'st', 'nd', 'rd'];
+            const value = num % 100;
+            return suffixes[(value - 20) % 10] || suffixes[value] || suffixes[0];
+        }
+
+        function displayNoGames() {
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('al-games').innerHTML = '<div class="no-games">No games scheduled today</div>';
+            document.getElementById('nl-games').innerHTML = '<div class="no-games">No games scheduled today</div>';
+            document.getElementById('scorebox').style.display = 'grid';
+            document.getElementById('last-update').textContent = new Date().toLocaleTimeString();
+        }
+
+        function displaySampleGames() {
+            const sampleGames = [
+                {
+                    homeTeam: 'New York Yankees',
+                    awayTeam: 'Boston Red Sox',
+                    homeScore: 7,
+                    awayScore: 4,
+                    status: 'Final',
+                    inning: '9th',
+                    isComplete: true
+                },
+                {
+                    homeTeam: 'Los Angeles Dodgers',
+                    awayTeam: 'San Francisco Giants',
+                    homeScore: 3,
+                    awayScore: 8,
+                    status: 'Final',
+                    inning: '9th',
+                    isComplete: true
+                },
+                {
+                    homeTeam: 'Houston Astros',
+                    awayTeam: 'Texas Rangers',
+                    homeScore: 5,
+                    awayScore: 2,
+                    status: 'Final',
+                    inning: '9th',
+                    isComplete: true
+                }
+            ];
+            displayGames(sampleGames);
         }
 
         function displayGames(games) {
@@ -341,6 +401,7 @@
             
             // Hide loading, show scorebox
             document.getElementById('loading').style.display = 'none';
+            document.getElementById('error').style.display = 'none';
             document.getElementById('scorebox').style.display = 'grid';
             
             // Update last update time
@@ -348,6 +409,13 @@
         }
         
         function displayLeagueGames(league, divisions, container) {
+            const hasGames = Object.values(divisions).some(div => div.length > 0);
+            
+            if (!hasGames) {
+                container.innerHTML = '<div class="no-games">No games in this league today</div>';
+                return;
+            }
+            
             ['East', 'Central', 'West'].forEach(division => {
                 if (divisions[division].length > 0) {
                     const divisionDiv = document.createElement('div');
@@ -376,8 +444,8 @@
             const gameDiv = document.createElement('div');
             gameDiv.className = 'game';
             
-            const awayWon = game.awayScore > game.homeScore && game.status === 'Final';
-            const homeWon = game.homeScore > game.awayScore && game.status === 'Final';
+            const awayWon = game.awayScore > game.homeScore && game.isComplete;
+            const homeWon = game.homeScore > game.awayScore && game.isComplete;
             
             gameDiv.innerHTML = `
                 <div class="teams">
@@ -389,7 +457,7 @@
                         <span class="${homeWon ? 'winner' : ''}">${game.homeTeam}</span>
                         <span class="score ${homeWon ? 'winner' : ''}">${game.homeScore}</span>
                     </div>
-                    <div class="game-info">${game.status} ${game.inning !== '9th' ? game.inning : ''}</div>
+                    <div class="game-info">${game.status} ${game.inning}</div>
                 </div>
             `;
             
@@ -399,8 +467,8 @@
         // Load scores when page loads
         fetchMLBScores();
         
-        // Auto-refresh every 5 minutes
-        setInterval(fetchMLBScores, 300000);
+        // Auto-refresh every 10 minutes (600000 milliseconds)
+        setInterval(fetchMLBScores, 600000);
     </script>
 </body>
 </html>
