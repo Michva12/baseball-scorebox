@@ -1,0 +1,40 @@
+name: Daily Baseball Scorebox Update
+
+on:
+  schedule:
+    # Runs at 6:00 AM EST every day
+    - cron: '0 11 * * *'
+  workflow_dispatch: # Allows manual trigger
+
+jobs:
+  update-scorebox:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18'
+        
+    - name: Install dependencies
+      run: |
+        npm init -y
+        npm install node-fetch@2 nodemailer
+        
+    - name: Update scorebox with latest games
+      run: node update-scorebox.js
+      env:
+        EMAIL_USER: ${{ secrets.EMAIL_USER }}
+        EMAIL_PASS: ${{ secrets.EMAIL_PASS }}
+        EMAIL_TO: ${{ secrets.EMAIL_TO }}
+        
+    - name: Commit and push changes
+      run: |
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        git add .
+        git diff --staged --quiet || git commit -m "Daily scorebox update - $(date)"
+        git push
