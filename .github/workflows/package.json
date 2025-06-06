@@ -1,0 +1,17 @@
+{
+  "name": "baseball-scorebox",
+  "version": "1.0.0",
+  "description": "Automated MLB scorebox generator",
+  "main": "update-scorebox.js",
+  "scripts": {
+    "start": "node update-scorebox.js",
+    "test": "echo \"No tests specified\""
+  },
+  "dependencies": {
+    "node-fetch": "^2.6.7",
+    "nodemailer": "^6.9.1"
+  },
+  "keywords": ["mlb", "baseball", "scores", "automation"],
+  "author": "Your Name",
+  "license": "MIT"
+}
